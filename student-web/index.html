@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sandstone Summit 6.0 — Student Portal</title>
+  <meta name="description" content="Register for Sandstone Summit 6.0 and get your QR attendance pass instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- QR code library (pure JS, no dependencies) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f0700;
+      --surface:  #1c0e00;
+      --card:     #251200;
+      --border:   #3a1c00;
+      --accent:   #d97706;
+      --accent2:  #f59e0b;
+      --text:     #fff;
+      --muted:    #a07040;
+      --green:    #10b981;
+      --red:      #ef4444;
+      --radius:   16px;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -20%, #5c2e0033 0%, transparent 70%),
+        var(--bg);
+    }
+
+    /* ───── layout ───── */
+    .page { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px 48px; }
+    .page.active { display: flex; }
+
+    /* ───── header ───── */
+    .logo { text-align: center; margin-bottom: 36px; }
+    .logo-emoji { font-size: 64px; line-height: 1; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 24px #d9770644); }
+    .logo-title { font-size: 28px; font-weight: 900; color: var(--accent); letter-spacing: 1px; }
+    .logo-sub   { font-size: 56px; font-weight: 900; line-height: 1; color: var(--text); margin-top: -4px; }
+    .logo-tag   { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+    /* ───── card ───── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* ───── form ───── */
+    .field { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    input {
+      width: 100%;
+      background: #3a1c00;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus { border-color: var(--accent); }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { opacity: .9; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px;
+      margin-top: 12px;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger {
+      background: transparent;
+      border: 1px solid #ef444440;
+      color: var(--red);
+      font-size: 13px;
+      padding: 10px;
+      margin-top: 8px;
+    }
+    .btn-download {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--accent2);
+      font-size: 14px;
+      padding: 12px;
+      margin-top: 0;
+    }
+    .btn-download:hover { background: var(--card); }
+
+    .error-msg {
+      color: var(--red);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 14px;
+      min-height: 20px;
+    }
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      margin-top: 20px;
+      line-height: 1.6;
+      max-width: 380px;
+    }
+
+    /* ───── spinner ───── */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 3px solid #ffffff44;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ───── QR page ───── */
+    #qr-page { gap: 0; }
+
+    .welcome-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 16px;
+    }
+    .welcome-hi   { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .welcome-name { font-size: 24px; font-weight: 800; margin-top: 2px; }
+    .welcome-roll { font-size: 15px; color: var(--accent); font-weight: 700; margin-top: 2px; }
+
+    .qr-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .qr-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      color: var(--accent);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+    .qr-wrap {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      display: inline-block;
+      box-shadow: 0 0 0 1px #d9770640, 0 8px 32px #0008;
+    }
+    #qr-canvas { display: block; }
+    .qr-hint {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 8px;
+    }
+    .btn-row .btn { flex: 1; margin: 0; }
+
+    .info-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 10px;
+    }
+    .info-row { font-size: 13px; color: var(--muted); padding: 4px 0; display: flex; align-items: center; gap: 10px; }
+
+    /* ───── attendance tab ───── */
+    .tabs {
+      display: flex;
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px #0006; }
+
+    /* attendance items */
+    .att-list { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+    .att-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .att-tick {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #10b98120;
+      border: 1px solid var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: var(--green);
+      flex-shrink: 0;
+    }
+    .att-info {}
+    .att-name    { font-size: 14px; font-weight: 700; }
+    .att-speaker { font-size: 12px; color: var(--accent); margin-top: 3px; }
+    .att-time    { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    .att-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 16px;
+    }
+    .att-count { font-size: 52px; font-weight: 900; color: var(--accent); line-height: 1; }
+    .att-count-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; letter-spacing: .5px; }
+
+    .empty-state { text-align: center; padding: 40px 0; color: var(--muted); }
+    .empty-state .ei { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ───── responsive ───── */
+    @media (max-width: 480px) {
+      .logo-sub { font-size: 44px; }
+      .logo-emoji { font-size: 52px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 1: ENROLL
+══════════════════════════════════════════════ -->
+<div id="enroll-page" class="page active">
+  <div class="logo">
+    <span class="logo-emoji">🏔️</span>
+    <div class="logo-title">Sandstone Summit</div>
+    <div class="logo-sub">6.0</div>
+    <div class="logo-tag">Register to get your QR attendance pass</div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label for="roll-input">Roll Number</label>
+      <input id="roll-input" type="text" placeholder="e.g. B22CS001" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label for="name-input">Full Name</label>
+      <input id="name-input" type="text" placeholder="Your full name" autocomplete="name" />
+    </div>
+
+    <div class="error-msg" id="enroll-error"></div>
+
+    <button id="enroll-btn" class="btn btn-primary" style="margin-top:8px" onclick="handleEnroll()">
+      Get My QR Pass →
+    </button>
+  </div>
+
+  <p class="note">
+    Already enrolled? Just enter your roll number and name again — your QR pass will be restored instantly.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 2: QR + ATTENDANCE
+══════════════════════════════════════════════ -->
+<div id="qr-page" class="page">
+  <div style="width:100%;max-width:420px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+    <div style="font-size:20px;font-weight:900;color:var(--accent)">🏔️ Sandstone <span style="color:var(--text)">6.0</span></div>
+    <button class="btn btn-outline" style="width:auto;padding:8px 14px;margin:0" onclick="handleLogout()">Sign out</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button id="tab-qr"  class="tab active" onclick="switchTab('qr')">My QR Pass</button>
+    <button id="tab-att" class="tab"        onclick="switchTab('att')">Attendance</button>
+  </div>
+
+  <!-- ── QR tab ── -->
+  <div id="panel-qr">
+    <div class="welcome-card">
+      <div class="welcome-hi">Welcome,</div>
+      <div class="welcome-name" id="disp-name">—</div>
+      <div class="welcome-roll" id="disp-roll">—</div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-label">Your Entry Pass</div>
+      <div class="qr-wrap">
+        <canvas id="qr-canvas"></canvas>
+      </div>
+      <div class="qr-hint">Show this to the organizer at each session</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-download" onclick="downloadQR()">⬇ Download QR</button>
+    </div>
+
+    <div class="info-card">
+      <div class="info-row"><span>📅</span> Sandstone Summit 6.0 &nbsp;·&nbsp; 29–30 Aug 2026</div>
+      <div class="info-row"><span>🏫</span> IIT Jodhpur</div>
+    </div>
+  </div>
+
+  <!-- ── Attendance tab ── -->
+  <div id="panel-att" style="display:none;width:100%;max-width:420px">
+    <div class="att-stat">
+      <div class="att-count" id="att-count">—</div>
+      <div class="att-count-label">Sessions Attended</div>
+    </div>
+    <div class="att-list" id="att-list">
+      <div class="empty-state"><div class="ei">⏳</div><p>Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // ─────────────────────────────────────────
+  //  CONFIG
+  // ─────────────────────────────────────────
+  const API = 'https://sandstone6-backend.onrender.com';
+
+  // ─────────────────────────────────────────
+  //  STATE
+  // ─────────────────────────────────────────
+  let student = null;
+
+  // ─────────────────────────────────────────
+  //  INIT
+  // ─────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('ss6_student');
+    if (saved) {
+      try {
+        student = JSON.parse(saved);
+        showQRPage();
+      } catch { localStorage.removeItem('ss6_student'); }
+    }
+
+    // Allow pressing Enter to enroll
+    document.getElementById('roll-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('name-input').focus(); });
+    document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleEnroll(); });
+  });
+
+  // ─────────────────────────────────────────
+  //  ENROLL
+  // ─────────────────────────────────────────
+  async function handleEnroll() {
+    const roll = document.getElementById('roll-input').value.trim().toUpperCase();
+    const name = document.getElementById('name-input').value.trim();
+    const errEl = document.getElementById('enroll-error');
+    const btn   = document.getElementById('enroll-btn');
+
+    errEl.textContent = '';
+    if (!roll || !name) { errEl.textContent = 'Both fields are required.'; return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Enrolling…';
+
+    try {
+      const res  = await fetch(`${API}/api/enroll`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ roll_number: roll, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Enrollment failed');
+
+      student = data.student;
+      localStorage.setItem('ss6_student', JSON.stringify(student));
+      showQRPage();
+    } catch (err) {
+      errEl.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Get My QR Pass →';
+    }
+  }
+
+  // ─────────────────────────────────────────
+  //  SHOW QR PAGE
+  // ─────────────────────────────────────────
+  function showQRPage() {
+    document.getElementById('enroll-page').classList.remove('active');
+    document.getElementById('qr-page').classList.add('active');
+
+    document.getElementById('disp-name').textContent = student.name;
+    document.getElementById('disp-roll').textContent = student.roll_number;
+
+    renderQR();
+    switchTab('qr');
+  }
+
+  function renderQR() {
+    const payload = JSON.stringify({ roll: student.roll_number, token: student.qr_token });
+    QRCode.toCanvas(document.getElementById('qr-canvas'), payload, {
+      width:  240,
+      margin: 1,
+      color:  { dark: '#5c2e00', light: '#ffffff' },
+    }, err => { if (err) console.error(err); });
+  }
+
+  // ─────────────────────────────────────────
+  //  DOWNLOAD QR
+  // ─────────────────────────────────────────
+  function downloadQR() {
+    const canvas = document.getElementById('qr-canvas');
+
+    // Create a decorated canvas with name + roll
+    const pad  = 24;
+    const out  = document.createElement('canvas');
+    const textH = 80;
+    out.width  = canvas.width  + pad * 2;
+    out.height = canvas.height + pad * 2 + textH;
+
+    const ctx = out.getContext('2d');
+    // Background
+    ctx.fillStyle = '#1c0e00';
+    ctx.fillRect(0, 0, out.width, out.height);
+
+    // Title
+    ctx.fillStyle = '#d97706';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SANDSTONE SUMMIT 6.0 — ENTRY PASS', out.width / 2, 22);
+
+    // QR
+    ctx.drawImage(canvas, pad, 36);
+
+    // Name & roll
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(student.name, out.width / 2, canvas.height + pad + 56);
+    ctx.fillStyle = '#d97706';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(student.roll_number, out.width / 2, canvas.height + pad + 76);
+
+    const link = document.createElement('a');
+    link.download = `sandstone6-qr-${student.roll_number}.png`;
+    link.href = out.toDataURL('image/png');
+    link.click();
+  }
+
+  // ─────────────────────────────────────────
+  //  TABS
+  // ─────────────────────────────────────────
+  function switchTab(tab) {
+    document.getElementById('tab-qr').classList.toggle('active', tab === 'qr');
+    document.getElementById('tab-att').classList.toggle('active', tab === 'att');
+    document.getElementById('panel-qr').style.display  = tab === 'qr'  ? '' : 'none';
+    document.getElementById('panel-att').style.display = tab === 'att' ? '' : 'none';
+    if (tab === 'att') fetchAttendance();
+  }
+
+  // ─────────────────────────────────────────
+  //  ATTENDANCE
+  // ─────────────────────────────────────────
+  async function fetchAttendance() {
+    const listEl  = document.getElementById('att-list');
+    const countEl = document.getElementById('att-count');
+    listEl.innerHTML = '<div class="empty-state"><div class="ei">⏳</div><p>Loading…</p></div>';
+    countEl.textContent = '—';
+
+    try {
+      const res  = await fetch(`${API}/api/attendance/student/${student.roll_number}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+
+      countEl.textContent = data.sessions_attended ?? 0;
+
+      if (!data.sessions || data.sessions.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="ei">📭</div>
+            <p>No attendance recorded yet.<br>Show your QR at each session.</p>
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = data.sessions.map(s => `
+        <div class="att-item">
+          <div class="att-tick">✓</div>
+          <div class="att-info">
+            <div class="att-name">Day ${s.day} · ${s.name}</div>
+            <div class="att-speaker">${s.speaker}</div>
+            <div class="att-time">${formatDate(s.start_time)} · ${formatTime(s.start_time)} – ${formatTime(s.end_time)}</div>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      listEl.innerHTML = `<div class="empty-state" style="color:#ef4444"><div class="ei">⚠️</div><p>${err.message}</p></div>`;
+    }
+  }
+
+  function formatTime(iso) {
+    return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+  }
+  function formatDate(iso) {
+    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+  }
+
+  // ─────────────────────────────────────────
+  //  LOGOUT
+  // ─────────────────────────────────────────
+  function handleLogout() {
+    if (!confirm('Remove your QR from this device? You can re-enroll anytime with the same details.')) return;
+    localStorage.removeItem('ss6_student');
+    student = null;
+    document.getElementById('qr-page').classList.remove('active');
+    document.getElementById('enroll-page').classList.add('active');
+    document.getElementById('roll-input').value = '';
+    document.getElementById('name-input').value = '';
+    document.getElementById('enroll-error').textContent = '';
+  }
+</script>
+
+</body>
+</html>
