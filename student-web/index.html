@@ -47,9 +47,8 @@
 
     /* ───── header ───── */
     .logo { text-align: center; margin-bottom: 36px; }
-    .logo-emoji { font-size: 64px; line-height: 1; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 24px #d9770644); }
-    .logo-title { font-size: 28px; font-weight: 900; color: var(--accent); letter-spacing: 1px; }
-    .logo-sub   { font-size: 56px; font-weight: 900; line-height: 1; color: var(--text); margin-top: -4px; }
+    .logo-title { font-size: 22px; font-weight: 800; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+    .logo-sub   { font-size: 40px; font-weight: 900; line-height: 1.1; color: var(--text); margin-top: 6px; }
     .logo-tag   { font-size: 13px; color: var(--muted); margin-top: 6px; }
 
     /* ───── card ───── */
@@ -302,8 +301,7 @@
 
     /* ───── responsive ───── */
     @media (max-width: 480px) {
-      .logo-sub { font-size: 44px; }
-      .logo-emoji { font-size: 52px; }
+      .logo-sub { font-size: 34px; }
     }
   </style>
 </head>
@@ -314,9 +312,8 @@
 ══════════════════════════════════════════════ -->
 <div id="enroll-page" class="page active">
   <div class="logo">
-    <span class="logo-emoji">🏔️</span>
-    <div class="logo-title">Sandstone Summit</div>
-    <div class="logo-sub">6.0</div>
+    <div class="logo-title">Sandstone 6.0</div>
+    <div class="logo-sub">Midnight Mirage</div>
     <div class="logo-tag">Register to get your QR attendance pass</div>
   </div>
 
@@ -348,7 +345,7 @@
 ══════════════════════════════════════════════ -->
 <div id="qr-page" class="page">
   <div style="width:100%;max-width:420px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
-    <div style="font-size:20px;font-weight:900;color:var(--accent)">🏔️ Sandstone <span style="color:var(--text)">6.0</span></div>
+    <div style="font-size:20px;font-weight:900;color:var(--accent)">Sandstone <span style="color:var(--text)">6.0</span></div>
     <button class="btn btn-outline" style="width:auto;padding:8px 14px;margin:0" onclick="handleLogout()">Sign out</button>
   </div>
 
@@ -513,7 +510,7 @@
     ctx.fillStyle = '#818cf8';
     ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('SANDSTONE SUMMIT 6.0  —  ENTRY PASS', out.width / 2, 20);
+    ctx.fillText('SANDSTONE 6.0  —  MIDNIGHT MIRAGE', out.width / 2, 20);
 
     // QR image
     ctx.drawImage(qrCanvas, pad, 32);
