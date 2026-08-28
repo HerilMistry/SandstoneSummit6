@@ -15,14 +15,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0f0700;
-      --surface:  #1c0e00;
-      --card:     #251200;
-      --border:   #3a1c00;
-      --accent:   #d97706;
-      --accent2:  #f59e0b;
-      --text:     #fff;
-      --muted:    #a07040;
+      --bg:       #020617;
+      --surface:  #0f172a;
+      --card:     #0f172a;
+      --border:   #312e81;
+      --accent:   #818cf8;
+      --accent2:  #a5b4fc;
+      --text:     #f8fafc;
+      --muted:    #94a3b8;
       --green:    #10b981;
       --red:      #ef4444;
       --radius:   16px;
@@ -37,7 +37,7 @@
 
     body {
       background:
-        radial-gradient(ellipse 80% 60% at 50% -20%, #5c2e0033 0%, transparent 70%),
+        radial-gradient(ellipse 80% 60% at 50% -20%, #312e8155 0%, transparent 70%),
         var(--bg);
     }
 
@@ -75,7 +75,7 @@
     }
     input {
       width: 100%;
-      background: #3a1c00;
+      background: #020617;
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 14px 16px;
@@ -202,7 +202,7 @@
       border-radius: 16px;
       padding: 16px;
       display: inline-block;
-      box-shadow: 0 0 0 1px #d9770640, 0 8px 32px #0008;
+      box-shadow: 0 0 0 1px #818cf840, 0 8px 32px #0008;
     }
     #qr-div { display: flex; align-items: center; justify-content: center; }
     #qr-div canvas, #qr-div img { border-radius: 8px; }
@@ -436,6 +436,7 @@
 
     errEl.textContent = '';
     if (!roll || !name) { errEl.textContent = 'Both fields are required.'; return; }
+    if (/\d/.test(name)) { errEl.textContent = 'Full name cannot contain numbers.'; return; }
 
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div> Enrolling…';
@@ -483,7 +484,7 @@
       text:        payload,
       width:       240,
       height:      240,
-      colorDark:   '#5c2e00',
+      colorDark:   '#0f172a',
       colorLight:  '#ffffff',
       correctLevel: QRCode.CorrectLevel.M,
     });
@@ -505,11 +506,11 @@
     out.height  = qrCanvas.height + pad * 2 + textH;
 
     const ctx = out.getContext('2d');
-    ctx.fillStyle = '#1c0e00';
+    ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, out.width, out.height);
 
     // Title bar
-    ctx.fillStyle = '#d97706';
+    ctx.fillStyle = '#818cf8';
     ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('SANDSTONE SUMMIT 6.0  —  ENTRY PASS', out.width / 2, 20);
@@ -521,7 +522,7 @@
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 17px sans-serif';
     ctx.fillText(student.name, out.width / 2, qrCanvas.height + pad + 50);
-    ctx.fillStyle = '#d97706';
+    ctx.fillStyle = '#818cf8';
     ctx.font = '13px sans-serif';
     ctx.fillText(student.roll_number, out.width / 2, qrCanvas.height + pad + 68);
 
