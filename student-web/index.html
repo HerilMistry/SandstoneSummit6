@@ -314,8 +314,8 @@
 ══════════════════════════════════════════════ -->
 <div id="enroll-page" class="page active">
   <div class="logo">
-    <div class="logo-title">Sandstone 6.0</div>
-    <div class="logo-sub">Midnight Mirage</div>
+    <div class="logo-title" style="font-size: 26px;">Sandstone 6.0</div>
+    <div class="logo-sub" style="font-size: 32px;">Midnight Mirage</div>
     <div class="logo-tag">Register to get your QR attendance pass</div>
   </div>
 
@@ -326,7 +326,7 @@
 
     <!-- Configure Google Sign-In -->
     <div id="g_id_onload"
-         data-client_id="YOUR_GOOGLE_CLIENT_ID_HERE"
+         data-client_id="579902192664-k7c38jd4npo37u479khse73ett8l8fgv.apps.googleusercontent.com"
          data-context="signin"
          data-ux_mode="popup"
          data-callback="handleGoogleLogin"
@@ -362,12 +362,6 @@
     <button class="btn btn-outline" style="width:auto;padding:8px 14px;margin:0" onclick="handleLogout()">Sign out</button>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button id="tab-qr"  class="tab active" onclick="switchTab('qr')">My QR Pass</button>
-    <button id="tab-att" class="tab"        onclick="switchTab('att')">Attendance</button>
-  </div>
-
   <!-- ── QR tab ── -->
   <div id="panel-qr">
     <div class="welcome-card">
@@ -391,17 +385,6 @@
     <div class="info-card">
       <div class="info-row"><span>📅</span> Sandstone Summit 6.0 &nbsp;·&nbsp; 29–30 Aug 2026</div>
       <div class="info-row"><span>🏫</span> IIT Jodhpur</div>
-    </div>
-  </div>
-
-  <!-- ── Attendance tab ── -->
-  <div id="panel-att" style="display:none;width:100%;max-width:420px">
-    <div class="att-stat">
-      <div class="att-count" id="att-count">—</div>
-      <div class="att-count-label">Sessions Attended</div>
-    </div>
-    <div class="att-list" id="att-list">
-      <div class="empty-state"><div class="ei">⏳</div><p>Loading…</p></div>
     </div>
   </div>
 </div>
@@ -492,7 +475,6 @@
     document.getElementById('disp-roll').textContent = student.roll_number;
 
     renderQR();
-    switchTab('qr');
   }
 
   let _qrInstance = null;
@@ -550,64 +532,6 @@
     link.download = `sandstone6-qr-${student.roll_number}.png`;
     link.href = out.toDataURL('image/png');
     link.click();
-  }
-
-  // ─────────────────────────────────────────
-  //  TABS
-  // ─────────────────────────────────────────
-  function switchTab(tab) {
-    document.getElementById('tab-qr').classList.toggle('active', tab === 'qr');
-    document.getElementById('tab-att').classList.toggle('active', tab === 'att');
-    document.getElementById('panel-qr').style.display  = tab === 'qr'  ? '' : 'none';
-    document.getElementById('panel-att').style.display = tab === 'att' ? '' : 'none';
-    if (tab === 'att') fetchAttendance();
-  }
-
-  // ─────────────────────────────────────────
-  //  ATTENDANCE
-  // ─────────────────────────────────────────
-  async function fetchAttendance() {
-    const listEl  = document.getElementById('att-list');
-    const countEl = document.getElementById('att-count');
-    listEl.innerHTML = '<div class="empty-state"><div class="ei">⏳</div><p>Loading…</p></div>';
-    countEl.textContent = '—';
-
-    try {
-      const res  = await fetch(`${API}/api/attendance/student/${student.roll_number}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-
-      countEl.textContent = data.sessions_attended ?? 0;
-
-      if (!data.sessions || data.sessions.length === 0) {
-        listEl.innerHTML = `
-          <div class="empty-state">
-            <div class="ei">📭</div>
-            <p>No attendance recorded yet.<br>Show your QR at each session.</p>
-          </div>`;
-        return;
-      }
-
-      listEl.innerHTML = data.sessions.map(s => `
-        <div class="att-item">
-          <div class="att-tick">✓</div>
-          <div class="att-info">
-            <div class="att-name">Day ${s.day} · ${s.name}</div>
-            <div class="att-speaker">${s.speaker}</div>
-            <div class="att-time">${formatDate(s.start_time)} · ${formatTime(s.start_time)} – ${formatTime(s.end_time)}</div>
-          </div>
-        </div>
-      `).join('');
-    } catch (err) {
-      listEl.innerHTML = `<div class="empty-state" style="color:#ef4444"><div class="ei">⚠️</div><p>${err.message}</p></div>`;
-    }
-  }
-
-  function formatTime(iso) {
-    return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
-  }
-  function formatDate(iso) {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
   }
 
   // ─────────────────────────────────────────
