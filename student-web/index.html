@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <!-- QR code library (pure JS, no dependencies) -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <!-- QRCode.js — reliable browser QR generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -204,7 +204,8 @@
       display: inline-block;
       box-shadow: 0 0 0 1px #d9770640, 0 8px 32px #0008;
     }
-    #qr-canvas { display: block; }
+    #qr-div { display: flex; align-items: center; justify-content: center; }
+    #qr-div canvas, #qr-div img { border-radius: 8px; }
     .qr-hint {
       color: var(--muted);
       font-size: 12px;
@@ -368,7 +369,7 @@
     <div class="qr-card">
       <div class="qr-label">Your Entry Pass</div>
       <div class="qr-wrap">
-        <canvas id="qr-canvas"></canvas>
+        <div id="qr-div"></div>
       </div>
       <div class="qr-hint">Show this to the organizer at each session</div>
     </div>
@@ -473,49 +474,56 @@
     switchTab('qr');
   }
 
+  let _qrInstance = null;
   function renderQR() {
     const payload = JSON.stringify({ roll: student.roll_number, token: student.qr_token });
-    QRCode.toCanvas(document.getElementById('qr-canvas'), payload, {
-      width:  240,
-      margin: 1,
-      color:  { dark: '#5c2e00', light: '#ffffff' },
-    }, err => { if (err) console.error(err); });
+    const container = document.getElementById('qr-div');
+    container.innerHTML = ''; // clear old QR
+    _qrInstance = new QRCode(container, {
+      text:        payload,
+      width:       240,
+      height:      240,
+      colorDark:   '#5c2e00',
+      colorLight:  '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
   }
 
   // ─────────────────────────────────────────
   //  DOWNLOAD QR
   // ─────────────────────────────────────────
   function downloadQR() {
-    const canvas = document.getElementById('qr-canvas');
+    // qrcodejs renders a canvas inside #qr-div
+    const qrCanvas = document.querySelector('#qr-div canvas');
+    if (!qrCanvas) { alert('QR not ready yet, please wait a moment.'); return; }
 
-    // Create a decorated canvas with name + roll
-    const pad  = 24;
-    const out  = document.createElement('canvas');
-    const textH = 80;
-    out.width  = canvas.width  + pad * 2;
-    out.height = canvas.height + pad * 2 + textH;
+    // Build a decorated canvas: title + QR + name + roll
+    const pad   = 24;
+    const textH = 70;
+    const out   = document.createElement('canvas');
+    out.width   = qrCanvas.width  + pad * 2;
+    out.height  = qrCanvas.height + pad * 2 + textH;
 
     const ctx = out.getContext('2d');
-    // Background
     ctx.fillStyle = '#1c0e00';
     ctx.fillRect(0, 0, out.width, out.height);
 
-    // Title
+    // Title bar
     ctx.fillStyle = '#d97706';
-    ctx.font = 'bold 14px sans-serif';
+    ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('SANDSTONE SUMMIT 6.0 — ENTRY PASS', out.width / 2, 22);
+    ctx.fillText('SANDSTONE SUMMIT 6.0  —  ENTRY PASS', out.width / 2, 20);
 
-    // QR
-    ctx.drawImage(canvas, pad, 36);
+    // QR image
+    ctx.drawImage(qrCanvas, pad, 32);
 
-    // Name & roll
+    // Name & roll below
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText(student.name, out.width / 2, canvas.height + pad + 56);
+    ctx.font = 'bold 17px sans-serif';
+    ctx.fillText(student.name, out.width / 2, qrCanvas.height + pad + 50);
     ctx.fillStyle = '#d97706';
-    ctx.font = '14px sans-serif';
-    ctx.fillText(student.roll_number, out.width / 2, canvas.height + pad + 76);
+    ctx.font = '13px sans-serif';
+    ctx.fillText(student.roll_number, out.width / 2, qrCanvas.height + pad + 68);
 
     const link = document.createElement('a');
     link.download = `sandstone6-qr-${student.roll_number}.png`;
