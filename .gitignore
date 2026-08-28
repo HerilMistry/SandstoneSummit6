@@ -1,0 +1,23 @@
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.production
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Expo / React Native
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Sandstone 6.0",
+    "slug": "sandstone6-student",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a0a00"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sandstone6.student"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a0a00"
+      },
+      "package": "com.sandstone6.student"
+    },
+    "plugins": ["expo-font"]
+  }
+}
