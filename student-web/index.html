@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <!-- QRCode.js — reliable browser QR generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -318,20 +320,31 @@
   </div>
 
   <div class="card">
-    <div class="field">
-      <label for="roll-input">Roll Number</label>
-      <input id="roll-input" type="text" placeholder="e.g. B22CS001" autocomplete="off" autocapitalize="characters" spellcheck="false" />
-    </div>
-    <div class="field" style="margin-bottom:0">
-      <label for="name-input">Full Name</label>
-      <input id="name-input" type="text" placeholder="Your full name" autocomplete="name" />
+    <p style="color: var(--muted); font-size: 13px; text-align: center; margin-bottom: 24px; line-height: 1.5;">
+      Please sign in with your official IIT Jodhpur email address (@iitj.ac.in) to register.
+    </p>
+
+    <!-- Configure Google Sign-In -->
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID_HERE"
+         data-context="signin"
+         data-ux_mode="popup"
+         data-callback="handleGoogleLogin"
+         data-auto_prompt="false">
     </div>
 
+    <!-- Render the button -->
+    <div class="g_id_signin"
+         style="display: flex; justify-content: center;"
+         data-type="standard"
+         data-shape="rectangular"
+         data-theme="filled_black"
+         data-text="signin_with"
+         data-size="large"
+         data-logo_alignment="left">
+    </div>
+    
     <div class="error-msg" id="enroll-error"></div>
-
-    <button id="enroll-btn" class="btn btn-primary" style="margin-top:8px" onclick="handleEnroll()">
-      Get My QR Pass →
-    </button>
   </div>
 
   <p class="note">
@@ -416,29 +429,41 @@
         showQRPage();
       } catch { localStorage.removeItem('ss6_student'); }
     }
-
-    // Allow pressing Enter to enroll
-    document.getElementById('roll-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('name-input').focus(); });
-    document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleEnroll(); });
   });
 
   // ─────────────────────────────────────────
-  //  ENROLL
+  //  GOOGLE AUTH LOGIN
   // ─────────────────────────────────────────
-  async function handleEnroll() {
-    const roll = document.getElementById('roll-input').value.trim().toUpperCase();
-    const name = document.getElementById('name-input').value.trim();
+  async function handleGoogleLogin(response) {
     const errEl = document.getElementById('enroll-error');
-    const btn   = document.getElementById('enroll-btn');
-
     errEl.textContent = '';
-    if (!roll || !name) { errEl.textContent = 'Both fields are required.'; return; }
-    if (/\d/.test(name)) { errEl.textContent = 'Full name cannot contain numbers.'; return; }
-
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Enrolling…';
-
+    
     try {
+      // Decode JWT token from Google
+      const token = response.credential;
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      
+      const payload = JSON.parse(jsonPayload);
+      const email = payload.email;
+      const name = payload.name;
+      
+      // Restrict to @iitj.ac.in
+      if (!email.endsWith('@iitj.ac.in')) {
+          errEl.style.color = 'var(--red)';
+          errEl.textContent = 'Access denied: Only @iitj.ac.in emails are allowed.';
+          return;
+      }
+      
+      // Extract roll number from email (e.g. b22cs001@iitj.ac.in -> B22CS001)
+      const roll = email.split('@')[0].toUpperCase();
+      
+      errEl.style.color = 'var(--text)';
+      errEl.innerHTML = '<div class="spinner" style="margin: 0 auto;"></div><div style="margin-top:8px;">Enrolling...</div>';
+      
       const res  = await fetch(`${API}/api/enroll`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -451,10 +476,8 @@
       localStorage.setItem('ss6_student', JSON.stringify(student));
       showQRPage();
     } catch (err) {
-      errEl.textContent = err.message;
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = 'Get My QR Pass →';
+      errEl.style.color = 'var(--red)';
+      errEl.textContent = err.message || 'An error occurred during sign-in.';
     }
   }
 
@@ -596,8 +619,6 @@
     student = null;
     document.getElementById('qr-page').classList.remove('active');
     document.getElementById('enroll-page').classList.add('active');
-    document.getElementById('roll-input').value = '';
-    document.getElementById('name-input').value = '';
     document.getElementById('enroll-error').textContent = '';
   }
 </script>
